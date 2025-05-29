@@ -10,6 +10,7 @@ import { MainLayout } from "@/components/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import MeusLeads from "./pages/MeusLeads";
 import NovoLead from "./pages/NovoLead";
+import Corretores from "./pages/Corretores";
 import Relatorios from "./pages/Relatorios";
 import Notificacoes from "./pages/Notificacoes";
 import NotFound from "./pages/NotFound";
@@ -31,6 +32,7 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/meus-leads" element={<MeusLeads />} />
                 <Route path="/novo-lead" element={<NovoLead />} />
+                <Route path="/corretores" element={<Corretores />} />
                 <Route path="/relatorios" element={<Relatorios />} />
                 <Route path="/notificacoes" element={<Notificacoes />} />
                 <Route path="*" element={<NotFound />} />

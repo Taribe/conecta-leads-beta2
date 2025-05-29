@@ -1,5 +1,5 @@
 
-import { Home, Users, UserPlus, BarChart3, Bell, Plus, LogOut } from "lucide-react";
+import { Home, Users, UserPlus, BarChart3, Bell, Plus, LogOut, UserCheck } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -19,6 +19,7 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Meus Leads", url: "/meus-leads", icon: Users },
   { title: "Novo Lead", url: "/novo-lead", icon: UserPlus },
+  { title: "Corretores", url: "/corretores", icon: UserCheck },
   { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
   { title: "Notificações", url: "/notificacoes", icon: Bell },
 ];

@@ -19,6 +19,8 @@ const NovoLead = () => {
     telefone: "",
     cidade: "",
     tipoPlano: "",
+    responsavel: "",
+    temperatura: "",
     origem: "",
     observacoes: "",
   });
@@ -49,6 +51,8 @@ const NovoLead = () => {
       telefone: "",
       cidade: "",
       tipoPlano: "",
+      responsavel: "",
+      temperatura: "",
       origem: "",
       observacoes: "",
     });
@@ -79,7 +83,7 @@ const NovoLead = () => {
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="nome">Nome</Label>
+                  <Label htmlFor="nome">Nome *</Label>
                   <Input
                     id="nome"
                     value={formData.nome}
@@ -88,7 +92,7 @@ const NovoLead = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -98,7 +102,7 @@ const NovoLead = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone</Label>
+                  <Label htmlFor="telefone">Telefone *</Label>
                   <Input
                     id="telefone"
                     value={formData.telefone}
@@ -129,7 +133,33 @@ const NovoLead = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="origem">Origem (opcional)</Label>
+                  <Label htmlFor="responsavel">Responsável</Label>
+                  <Select onValueChange={(value) => handleInputChange("responsavel", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o responsável" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="joao-silva">João Silva</SelectItem>
+                      <SelectItem value="maria-santos">Maria Santos</SelectItem>
+                      <SelectItem value="pedro-costa">Pedro Costa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="temperatura">Temperatura</Label>
+                  <Select onValueChange={(value) => handleInputChange("temperatura", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a temperatura" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quente">🔥 Quente</SelectItem>
+                      <SelectItem value="morno">🟡 Morno</SelectItem>
+                      <SelectItem value="frio">🧊 Frio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="origem">Origem</Label>
                   <Select onValueChange={(value) => handleInputChange("origem", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a origem" />
@@ -146,7 +176,7 @@ const NovoLead = () => {
               </div>
 
               <div className="mt-6 space-y-2">
-                <Label htmlFor="observacoes">Observações (opcional)</Label>
+                <Label htmlFor="observacoes">Observações</Label>
                 <Textarea
                   id="observacoes"
                   value={formData.observacoes}
