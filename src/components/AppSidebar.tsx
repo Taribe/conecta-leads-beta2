@@ -32,9 +32,9 @@ export function AppSidebar() {
       <SidebarHeader className="p-6">
         <div className="flex items-center space-x-3">
           <img 
-            src="/lovable-uploads/e96c2aa9-84ba-4f75-8ef4-b2a4b2c6b0be" 
+            src="/lovable-uploads/d0576c6c-3763-47c1-900f-2f682857fbe4.png" 
             alt="Corretor Conecta Logo" 
-            className="w-10 h-10 object-contain"
+            className="w-auto h-10 object-contain"
           />
           <div>
             <h2 className="text-gray-900 font-semibold">Conecta Leads</h2>
