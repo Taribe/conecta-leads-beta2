@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Search, Filter, Plus, Frown, User, MapPin, Phone, Calendar } from "lucide-react";
+import { Search, Plus, MapPin, Phone, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,68 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
-
-interface Lead {
-  id: string;
-  nome: string;
-  email: string;
-  telefone: string;
-  cidade: string;
-  tipoPlano: string;
-  status: "novo" | "contatado" | "interessado" | "fechado";
-  responsavel: string;
-  origem: string;
-  dataCadastro: string;
-  temperatura: "quente" | "morno" | "frio";
-}
-
-const mockLeads: Lead[] = [
-  {
-    id: "1",
-    nome: "Ana Silva",
-    email: "ana.silva@email.com",
-    telefone: "(11) 99999-1111",
-    cidade: "São Paulo",
-    tipoPlano: "Familiar",
-    status: "novo",
-    responsavel: "João Silva",
-    origem: "Site",
-    dataCadastro: "2024-01-15",
-    temperatura: "quente"
-  },
-  {
-    id: "2",
-    nome: "Carlos Santos",
-    email: "carlos.santos@email.com",
-    telefone: "(21) 99999-2222",
-    cidade: "Rio de Janeiro",
-    tipoPlano: "Empresarial",
-    status: "contatado",
-    responsavel: "Maria Santos",
-    origem: "Google Ads",
-    dataCadastro: "2024-01-14",
-    temperatura: "morno"
-  },
-  {
-    id: "3",
-    nome: "Fernanda Costa",
-    email: "fernanda.costa@email.com",
-    telefone: "(31) 99999-3333",
-    cidade: "Belo Horizonte",
-    tipoPlano: "Individual",
-    status: "interessado",
-    responsavel: "Pedro Costa",
-    origem: "Facebook",
-    dataCadastro: "2024-01-13",
-    temperatura: "quente"
-  }
-];
+import { useLeads } from "@/hooks/useLeads";
 
 const MeusLeads = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [leads] = useState<Lead[]>(mockLeads);
+  const { leads, loading } = useLeads();
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case "novo": return "bg-blue-100 text-blue-700";
       case "contatado": return "bg-yellow-100 text-yellow-700";
@@ -80,7 +25,7 @@ const MeusLeads = () => {
     }
   };
 
-  const getTemperaturaColor = (temperatura: string) => {
+  const getTemperaturaColor = (temperatura: string | null) => {
     switch (temperatura) {
       case "quente": return "bg-red-100 text-red-700";
       case "morno": return "bg-orange-100 text-orange-700";
@@ -92,8 +37,16 @@ const MeusLeads = () => {
   const filteredLeads = leads.filter(lead =>
     lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.responsavel.toLowerCase().includes(searchTerm.toLowerCase())
+    (lead.responsavel?.nome || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -139,17 +92,6 @@ const MeusLeads = () => {
             </Select>
             <Select>
               <SelectTrigger className="w-full md:w-[180px]">
-                <SelectValue placeholder="Responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="joao">João Silva</SelectItem>
-                <SelectItem value="maria">Maria Santos</SelectItem>
-                <SelectItem value="pedro">Pedro Costa</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select>
-              <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Temperatura" />
               </SelectTrigger>
               <SelectContent>
@@ -185,10 +127,12 @@ const MeusLeads = () => {
                     <TableCell>
                       <div>
                         <p className="font-medium text-gray-900">{lead.nome}</p>
-                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {lead.cidade}
-                        </div>
+                        {lead.cidade && (
+                          <div className="flex items-center text-sm text-gray-500 mt-1">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {lead.cidade}
+                          </div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -204,29 +148,36 @@ const MeusLeads = () => {
                       <div className="flex items-center space-x-2">
                         <Avatar className="w-8 h-8">
                           <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                            {lead.responsavel.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            {lead.responsavel?.nome ? 
+                              lead.responsavel.nome.split(' ').map(n => n[0]).join('').toUpperCase() :
+                              '?'
+                            }
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-medium">{lead.responsavel}</span>
+                        <span className="text-sm font-medium">
+                          {lead.responsavel?.nome || 'Não atribuído'}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(lead.status)}>
-                        {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+                        {lead.status ? lead.status.charAt(0).toUpperCase() + lead.status.slice(1) : 'Novo'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getTemperaturaColor(lead.temperatura)}>
-                        {lead.temperatura.charAt(0).toUpperCase() + lead.temperatura.slice(1)}
-                      </Badge>
+                      {lead.temperatura && (
+                        <Badge className={getTemperaturaColor(lead.temperatura)}>
+                          {lead.temperatura.charAt(0).toUpperCase() + lead.temperatura.slice(1)}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">{lead.tipoPlano}</span>
+                      <span className="text-sm">{lead.tipo_plano || '-'}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-3 h-3 mr-1" />
-                        {new Date(lead.dataCadastro).toLocaleDateString('pt-BR')}
+                        {new Date(lead.created_at).toLocaleDateString('pt-BR')}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -240,12 +191,15 @@ const MeusLeads = () => {
           <CardContent className="py-16">
             <div className="text-center">
               <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <Frown className="w-8 h-8 text-gray-400" />
+                <Plus className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum lead encontrado</h3>
-              <p className="text-gray-600 mb-6">Não encontramos leads que correspondam aos filtros selecionados.</p>
-              <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50">
-                Limpar filtros
+              <p className="text-gray-600 mb-6">Comece adicionando seu primeiro lead no sistema.</p>
+              <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                <Link to="/novo-lead">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar primeiro lead
+                </Link>
               </Button>
             </div>
           </CardContent>

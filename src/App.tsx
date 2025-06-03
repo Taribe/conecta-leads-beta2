@@ -4,44 +4,105 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { MainLayout } from "@/components/MainLayout";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import MainLayout from "./components/MainLayout";
+import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import MeusLeads from "./pages/MeusLeads";
 import NovoLead from "./pages/NovoLead";
 import Corretores from "./pages/Corretores";
 import Relatorios from "./pages/Relatorios";
 import Notificacoes from "./pages/Notificacoes";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <SidebarProvider>
-          <div className="min-h-screen flex w-full bg-gray-50">
-            <AppSidebar />
-            <MainLayout>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/meus-leads" element={<MeusLeads />} />
-                <Route path="/novo-lead" element={<NovoLead />} />
-                <Route path="/corretores" element={<Corretores />} />
-                <Route path="/relatorios" element={<Relatorios />} />
-                <Route path="/notificacoes" element={<Notificacoes />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </MainLayout>
-          </div>
-        </SidebarProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Index />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Dashboard />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meus-leads"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <MeusLeads />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/novo-lead"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <NovoLead />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/corretores"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Corretores />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/relatorios"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Relatorios />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notificacoes"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Notificacoes />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      corretores: {
+        Row: {
+          ativo: boolean | null
+          avatar_url: string | null
+          cargo: string | null
+          created_at: string
+          email: string
+          id: number
+          nome: string
+          telefone: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          avatar_url?: string | null
+          cargo?: string | null
+          created_at?: string
+          email: string
+          id?: number
+          nome: string
+          telefone?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          avatar_url?: string | null
+          cargo?: string | null
+          created_at?: string
+          email?: string
+          id?: number
+          nome?: string
+          telefone?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       Corretores: {
         Row: {
           created_at: string
@@ -23,6 +59,59 @@ export type Database = {
           id?: number
         }
         Relationships: []
+      }
+      leads: {
+        Row: {
+          cidade: string | null
+          created_at: string
+          email: string
+          id: number
+          nome: string
+          observacoes: string | null
+          origem: string | null
+          responsavel_id: number | null
+          status: string | null
+          telefone: string
+          temperatura: string | null
+          tipo_plano: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          created_at?: string
+          email: string
+          id?: number
+          nome: string
+          observacoes?: string | null
+          origem?: string | null
+          responsavel_id?: number | null
+          status?: string | null
+          telefone: string
+          temperatura?: string | null
+          tipo_plano?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          created_at?: string
+          email?: string
+          id?: number
+          nome?: string
+          observacoes?: string | null
+          origem?: string | null
+          responsavel_id?: number | null
+          status?: string | null
+          telefone?: string
+          temperatura?: string | null
+          tipo_plano?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       Leads: {
         Row: {

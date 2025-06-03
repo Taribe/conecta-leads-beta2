@@ -6,30 +6,37 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useLeads } from "@/hooks/useLeads";
+import { useCorretores } from "@/hooks/useCorretores";
 
 const NovoLead = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { createLead } = useLeads();
+  const { corretores, currentCorretor } = useCorretores();
+  const [loading, setLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
     telefone: "",
     cidade: "",
-    tipoPlano: "",
-    responsavel: "",
+    tipo_plano: "",
+    responsavel_id: null as number | null,
     temperatura: "",
     origem: "",
     observacoes: "",
   });
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | number | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.nome || !formData.email || !formData.telefone) {
       toast({
         title: "Campos obrigatórios",
@@ -39,23 +46,31 @@ const NovoLead = () => {
       return;
     }
 
-    toast({
-      title: "Lead adicionado com sucesso!",
-      description: "O novo lead foi cadastrado no sistema.",
-    });
+    setLoading(true);
+    
+    const leadData = {
+      ...formData,
+      responsavel_id: formData.responsavel_id || currentCorretor?.id || null,
+      status: 'novo' as const
+    };
 
-    // Reset form
-    setFormData({
-      nome: "",
-      email: "",
-      telefone: "",
-      cidade: "",
-      tipoPlano: "",
-      responsavel: "",
-      temperatura: "",
-      origem: "",
-      observacoes: "",
-    });
+    const { error } = await createLead(leadData);
+
+    if (error) {
+      toast({
+        title: "Erro ao adicionar lead",
+        description: "Ocorreu um erro ao cadastrar o lead. Tente novamente.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Lead adicionado com sucesso!",
+        description: "O novo lead foi cadastrado no sistema.",
+      });
+      navigate("/meus-leads");
+    }
+    
+    setLoading(false);
   };
 
   return (
@@ -120,8 +135,8 @@ const NovoLead = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tipoPlano">Tipo de Plano</Label>
-                  <Select onValueChange={(value) => handleInputChange("tipoPlano", value)}>
+                  <Label htmlFor="tipo_plano">Tipo de Plano</Label>
+                  <Select onValueChange={(value) => handleInputChange("tipo_plano", value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo de plano" />
                     </SelectTrigger>
@@ -134,14 +149,16 @@ const NovoLead = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="responsavel">Responsável</Label>
-                  <Select onValueChange={(value) => handleInputChange("responsavel", value)}>
+                  <Select onValueChange={(value) => handleInputChange("responsavel_id", parseInt(value))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o responsável" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="joao-silva">João Silva</SelectItem>
-                      <SelectItem value="maria-santos">Maria Santos</SelectItem>
-                      <SelectItem value="pedro-costa">Pedro Costa</SelectItem>
+                      {corretores.map((corretor) => (
+                        <SelectItem key={corretor.id} value={corretor.id.toString()}>
+                          {corretor.nome}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -190,8 +207,12 @@ const NovoLead = () => {
                 <Button variant="outline" asChild>
                   <Link to="/meus-leads">Cancelar</Link>
                 </Button>
-                <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
-                  Adicionar Lead
+                <Button 
+                  onClick={handleSubmit} 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={loading}
+                >
+                  {loading ? "Adicionando..." : "Adicionar Lead"}
                 </Button>
               </div>
             </CardContent>
@@ -200,10 +221,7 @@ const NovoLead = () => {
 
         <TabsContent value="importar">
           <Card>
-            <CardHeader>
-              <CardTitle>Importar Lista de Leads</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <div className="text-center py-12">
                 <p className="text-gray-600 mb-4">Funcionalidade de importação será implementada em breve.</p>
                 <Button variant="outline" disabled>
