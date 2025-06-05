@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { MainLayout } from "./components/MainLayout";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -29,72 +31,74 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route
-              path="/"
+              path="/*"
               element={
                 <ProtectedRoute>
-                  <MainLayout>
-                    <Index />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Dashboard />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/meus-leads"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <MeusLeads />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/novo-lead"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <NovoLead />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/corretores"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Corretores />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/relatorios"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Relatorios />
-                  </MainLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notificacoes"
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Notificacoes />
-                  </MainLayout>
+                  <SidebarProvider>
+                    <div className="min-h-screen flex w-full">
+                      <AppSidebar />
+                      <SidebarInset>
+                        <Routes>
+                          <Route
+                            path="/"
+                            element={
+                              <MainLayout>
+                                <Index />
+                              </MainLayout>
+                            }
+                          />
+                          <Route
+                            path="/dashboard"
+                            element={
+                              <MainLayout>
+                                <Dashboard />
+                              </MainLayout>
+                            }
+                          />
+                          <Route
+                            path="/meus-leads"
+                            element={
+                              <MainLayout>
+                                <MeusLeads />
+                              </MainLayout>
+                            }
+                          />
+                          <Route
+                            path="/novo-lead"
+                            element={
+                              <MainLayout>
+                                <NovoLead />
+                              </MainLayout>
+                            }
+                          />
+                          <Route
+                            path="/corretores"
+                            element={
+                              <MainLayout>
+                                <Corretores />
+                              </MainLayout>
+                            }
+                          />
+                          <Route
+                            path="/relatorios"
+                            element={
+                              <MainLayout>
+                                <Relatorios />
+                              </MainLayout>
+                            }
+                          />
+                          <Route
+                            path="/notificacoes"
+                            element={
+                              <MainLayout>
+                                <Notificacoes />
+                              </MainLayout>
+                            }
+                          />
+                        </Routes>
+                      </SidebarInset>
+                    </div>
+                  </SidebarProvider>
                 </ProtectedRoute>
               }
             />
