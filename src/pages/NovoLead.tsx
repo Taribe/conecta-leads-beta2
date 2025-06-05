@@ -11,11 +11,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLeads } from "@/hooks/useLeads";
 import { useCorretores } from "@/hooks/useCorretores";
+import { processCSVFile, processExcelFile, ImportedLead } from "@/utils/csvProcessor";
 
 const NovoLead = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { createLead } = useLeads();
+  const { createLead, importLeads } = useLeads();
   const { corretores, currentCorretor } = useCorretores();
   const [loading, setLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
@@ -55,12 +56,15 @@ const NovoLead = () => {
       status: 'novo' as const
     };
 
+    console.log('Enviando dados do lead:', leadData);
+
     const { error } = await createLead(leadData);
 
     if (error) {
+      console.error('Erro ao criar lead:', error);
       toast({
         title: "Erro ao adicionar lead",
-        description: "Ocorreu um erro ao cadastrar o lead. Tente novamente.",
+        description: `Ocorreu um erro ao cadastrar o lead: ${error}`,
         variant: "destructive",
       });
     } else {
@@ -84,7 +88,7 @@ const NovoLead = () => {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       ];
       
-      if (!allowedTypes.includes(file.type)) {
+      if (!allowedTypes.includes(file.type) && !file.name.endsWith('.csv')) {
         toast({
           title: "Tipo de arquivo inválido",
           description: "Por favor, selecione um arquivo CSV, XLS ou XLSX.",
@@ -120,20 +124,47 @@ const NovoLead = () => {
     setImportLoading(true);
 
     try {
-      // Por enquanto, apenas simular a importação
-      // Em uma implementação real, você processaria o arquivo CSV/Excel aqui
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      let importedLeads: ImportedLead[] = [];
 
-      toast({
-        title: "Importação concluída!",
-        description: "Os leads foram importados com sucesso.",
-      });
-      
-      navigate("/meus-leads");
+      if (selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv')) {
+        importedLeads = await processCSVFile(selectedFile);
+      } else {
+        importedLeads = await processExcelFile(selectedFile);
+      }
+
+      // Converter para o formato esperado pela API
+      const leadsToImport = importedLeads.map(lead => ({
+        ...lead,
+        responsavel_id: currentCorretor?.id || null,
+        status: 'novo' as const,
+        origem: 'importacao',
+        temperatura: null,
+        observacoes: null
+      }));
+
+      console.log('Leads para importar:', leadsToImport);
+
+      const { error, count } = await importLeads(leadsToImport);
+
+      if (error) {
+        console.error('Erro na importação:', error);
+        toast({
+          title: "Erro na importação",
+          description: `Erro ao importar leads: ${error}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Importação concluída!",
+          description: `${count} leads foram importados com sucesso.`,
+        });
+        navigate("/meus-leads");
+      }
     } catch (error) {
+      console.error('Erro ao processar arquivo:', error);
       toast({
         title: "Erro na importação",
-        description: "Ocorreu um erro ao importar os leads. Verifique o formato do arquivo.",
+        description: error instanceof Error ? error.message : "Ocorreu um erro ao processar o arquivo.",
         variant: "destructive",
       });
     } finally {

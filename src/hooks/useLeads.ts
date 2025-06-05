@@ -44,6 +44,7 @@ export const useLeads = () => {
       if (error) {
         console.error('Erro ao buscar leads:', error);
       } else {
+        console.log('Leads carregados:', data);
         setLeads(data || []);
       }
     } catch (error) {
@@ -55,6 +56,8 @@ export const useLeads = () => {
 
   const createLead = async (leadData: Omit<Lead, 'id' | 'created_at' | 'responsavel'>) => {
     if (!user) return { error: 'Usuário não autenticado' };
+
+    console.log('Criando lead:', leadData);
 
     try {
       const { data, error } = await supabase
@@ -68,10 +71,36 @@ export const useLeads = () => {
         return { error: error.message };
       }
 
+      console.log('Lead criado com sucesso:', data);
       await fetchLeads(); // Refresh the list
       return { data, error: null };
     } catch (error) {
       console.error('Erro ao criar lead:', error);
+      return { error: 'Erro interno do servidor' };
+    }
+  };
+
+  const importLeads = async (leadsData: Array<Omit<Lead, 'id' | 'created_at' | 'responsavel'>>) => {
+    if (!user) return { error: 'Usuário não autenticado' };
+
+    console.log('Importando leads:', leadsData);
+
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .insert(leadsData)
+        .select();
+
+      if (error) {
+        console.error('Erro ao importar leads:', error);
+        return { error: error.message };
+      }
+
+      console.log('Leads importados com sucesso:', data);
+      await fetchLeads(); // Refresh the list
+      return { data, error: null, count: data?.length || 0 };
+    } catch (error) {
+      console.error('Erro ao importar leads:', error);
       return { error: 'Erro interno do servidor' };
     }
   };
@@ -84,6 +113,7 @@ export const useLeads = () => {
     leads,
     loading,
     fetchLeads,
-    createLead
+    createLead,
+    importLeads
   };
 };
