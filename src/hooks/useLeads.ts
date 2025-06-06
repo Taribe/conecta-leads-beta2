@@ -57,6 +57,8 @@ export const useLeads = () => {
   const fetchLeadById = async (id: number) => {
     if (!user) return { error: 'Usuário não autenticado' };
 
+    console.log('Buscando lead por ID:', id);
+
     try {
       const { data, error } = await supabase
         .from('leads')
@@ -67,13 +69,19 @@ export const useLeads = () => {
           )
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Erro ao buscar lead:', error);
         return { error: error.message };
       }
 
+      if (!data) {
+        console.log('Lead não encontrado para ID:', id);
+        return { error: 'Lead não encontrado' };
+      }
+
+      console.log('Lead encontrado:', data);
       return { data, error: null };
     } catch (error) {
       console.error('Erro ao buscar lead:', error);

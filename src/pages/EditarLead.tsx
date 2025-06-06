@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
@@ -27,19 +27,36 @@ const EditarLead = () => {
   const [status, setStatus] = useState("");
   const [observacoes, setObservacoes] = useState("");
 
-  useEffect(() => {
-    const loadLead = async () => {
-      if (!id) {
+  const loadLead = useCallback(async () => {
+    if (!id) {
+      console.log('ID não encontrado, redirecionando para meus-leads');
+      navigate("/meus-leads");
+      return;
+    }
+
+    console.log('Carregando lead com ID:', id);
+    setLoading(true);
+
+    try {
+      const leadId = parseInt(id);
+      if (isNaN(leadId)) {
+        console.error('ID inválido:', id);
+        toast({
+          title: "Erro",
+          description: "ID do lead inválido.",
+          variant: "destructive",
+        });
         navigate("/meus-leads");
         return;
       }
 
-      const result = await fetchLeadById(parseInt(id));
+      const result = await fetchLeadById(leadId);
       
       if (result?.error) {
+        console.error('Erro ao carregar lead:', result.error);
         toast({
           title: "Erro",
-          description: "Lead não encontrado.",
+          description: result.error,
           variant: "destructive",
         });
         navigate("/meus-leads");
@@ -48,9 +65,10 @@ const EditarLead = () => {
 
       const lead = result.data;
       if (lead) {
-        setNome(lead.nome);
-        setEmail(lead.email);
-        setTelefone(lead.telefone);
+        console.log('Lead carregado com sucesso:', lead);
+        setNome(lead.nome || "");
+        setEmail(lead.email || "");
+        setTelefone(lead.telefone || "");
         setCidade(lead.cidade || "");
         setTipoPlano(lead.tipo_plano || "");
         setResponsavelId(lead.responsavel_id?.toString() || "");
@@ -58,31 +76,60 @@ const EditarLead = () => {
         setTemperatura(lead.temperatura || "");
         setStatus(lead.status || "novo");
         setObservacoes(lead.observacoes || "");
+      } else {
+        console.error('Lead não encontrado');
+        toast({
+          title: "Erro",
+          description: "Lead não encontrado.",
+          variant: "destructive",
+        });
+        navigate("/meus-leads");
       }
-      
+    } catch (error) {
+      console.error('Erro inesperado ao carregar lead:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado ao carregar o lead.",
+        variant: "destructive",
+      });
+      navigate("/meus-leads");
+    } finally {
       setLoading(false);
-    };
-
-    loadLead();
+    }
   }, [id, fetchLeadById, navigate, toast]);
+
+  useEffect(() => {
+    loadLead();
+  }, [loadLead]);
 
   const handleFormSubmit = async (leadData: any) => {
     if (!id) return;
 
-    const result = await updateLead(parseInt(id), leadData);
-    
-    if (result?.error) {
+    console.log('Atualizando lead:', leadData);
+
+    try {
+      const result = await updateLead(parseInt(id), leadData);
+      
+      if (result?.error) {
+        toast({
+          title: "Erro",
+          description: result.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Sucesso",
+          description: "Lead atualizado com sucesso!",
+        });
+        navigate("/meus-leads");
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar lead:', error);
       toast({
         title: "Erro",
-        description: result.error,
+        description: "Erro inesperado ao atualizar o lead.",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Sucesso",
-        description: "Lead atualizado com sucesso!",
-      });
-      navigate("/meus-leads");
     }
   };
 
