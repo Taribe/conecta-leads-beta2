@@ -55,7 +55,10 @@ export const useLeads = () => {
   };
 
   const fetchLeadById = async (id: number) => {
-    if (!user) return { error: 'Usuário não autenticado' };
+    if (!user) {
+      console.log('Usuário não autenticado');
+      return { error: 'Usuário não autenticado' };
+    }
 
     console.log('Buscando lead por ID:', id);
 
@@ -168,7 +171,9 @@ export const useLeads = () => {
   };
 
   useEffect(() => {
-    fetchLeads();
+    if (user) {
+      fetchLeads();
+    }
   }, [user]);
 
   return {
