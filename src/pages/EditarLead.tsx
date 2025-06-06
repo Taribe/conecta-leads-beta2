@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -191,7 +191,8 @@ const EditarLead = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o tipo de plano" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="">Nenhum</SelectItem>
                     <SelectItem value="basic">Básico</SelectItem>
                     <SelectItem value="premium">Premium</SelectItem>
                     <SelectItem value="enterprise">Enterprise</SelectItem>
@@ -204,7 +205,8 @@ const EditarLead = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o responsável" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="">Nenhum</SelectItem>
                     {corretores.map((corretor) => (
                       <SelectItem key={corretor.id} value={corretor.id.toString()}>
                         {corretor.nome}
@@ -219,9 +221,11 @@ const EditarLead = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a origem" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="">Nenhuma</SelectItem>
                     <SelectItem value="website">Website</SelectItem>
                     <SelectItem value="redes-sociais">Redes Sociais</SelectItem>
+                    <SelectItem value="telefone">Telefone</SelectItem>
                     <SelectItem value="indicacao">Indicação</SelectItem>
                     <SelectItem value="evento">Evento</SelectItem>
                     <SelectItem value="importacao">Importação</SelectItem>
@@ -235,7 +239,8 @@ const EditarLead = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a temperatura" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white z-50">
+                    <SelectItem value="">Nenhuma</SelectItem>
                     <SelectItem value="frio">Frio</SelectItem>
                     <SelectItem value="morno">Morno</SelectItem>
                     <SelectItem value="quente">Quente</SelectItem>
@@ -248,7 +253,7 @@ const EditarLead = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white z-50">
                     <SelectItem value="novo">Novo</SelectItem>
                     <SelectItem value="contatado">Contatado</SelectItem>
                     <SelectItem value="interessado">Interessado</SelectItem>
