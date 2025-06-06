@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Search, Plus, MapPin, Phone, Calendar } from "lucide-react";
+import { Search, Plus, MapPin, Phone, Calendar, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,6 +13,8 @@ import { useLeads } from "@/hooks/useLeads";
 
 const MeusLeads = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [temperaturaFilter, setTemperaturaFilter] = useState("todos");
   const { leads, loading } = useLeads();
 
   const getStatusColor = (status: string | null) => {
@@ -20,7 +22,10 @@ const MeusLeads = () => {
       case "novo": return "bg-blue-100 text-blue-700";
       case "contatado": return "bg-yellow-100 text-yellow-700";
       case "interessado": return "bg-green-100 text-green-700";
-      case "fechado": return "bg-purple-100 text-purple-700";
+      case "proposta": return "bg-purple-100 text-purple-700";
+      case "negociacao": return "bg-orange-100 text-orange-700";
+      case "fechado": return "bg-emerald-100 text-emerald-700";
+      case "perdido": return "bg-red-100 text-red-700";
       default: return "bg-gray-100 text-gray-700";
     }
   };
@@ -34,11 +39,16 @@ const MeusLeads = () => {
     }
   };
 
-  const filteredLeads = leads.filter(lead =>
-    lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (lead.responsavel?.nome || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredLeads = leads.filter(lead => {
+    const matchesSearch = lead.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (lead.responsavel?.nome || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "todos" || lead.status === statusFilter;
+    const matchesTemperatura = temperaturaFilter === "todos" || lead.temperatura === temperaturaFilter;
+    
+    return matchesSearch && matchesStatus && matchesTemperatura;
+  });
 
   if (loading) {
     return (
@@ -78,7 +88,7 @@ const MeusLeads = () => {
                 />
               </div>
             </div>
-            <Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -87,10 +97,13 @@ const MeusLeads = () => {
                 <SelectItem value="novo">Novo</SelectItem>
                 <SelectItem value="contatado">Contatado</SelectItem>
                 <SelectItem value="interessado">Interessado</SelectItem>
+                <SelectItem value="proposta">Proposta</SelectItem>
+                <SelectItem value="negociacao">Negociação</SelectItem>
                 <SelectItem value="fechado">Fechado</SelectItem>
+                <SelectItem value="perdido">Perdido</SelectItem>
               </SelectContent>
             </Select>
-            <Select>
+            <Select value={temperaturaFilter} onValueChange={setTemperaturaFilter}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue placeholder="Temperatura" />
               </SelectTrigger>
@@ -119,6 +132,7 @@ const MeusLeads = () => {
                   <TableHead>Temperatura</TableHead>
                   <TableHead>Tipo de Plano</TableHead>
                   <TableHead>Data Cadastro</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -179,6 +193,18 @@ const MeusLeads = () => {
                         <Calendar className="w-3 h-3 mr-1" />
                         {new Date(lead.created_at).toLocaleDateString('pt-BR')}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <Link to={`/editar-lead/${lead.id}`}>
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

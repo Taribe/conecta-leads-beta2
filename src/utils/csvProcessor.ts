@@ -5,8 +5,8 @@ export interface ImportedLead {
   nome: string;
   email: string;
   telefone: string;
-  cidade?: string;
-  tipo_plano?: string;
+  cidade: string | null;
+  tipo_plano: string | null;
 }
 
 export const processCSVFile = (file: File): Promise<ImportedLead[]> => {
@@ -52,9 +52,15 @@ export const processCSVFile = (file: File): Promise<ImportedLead[]> => {
             }
           });
 
-          // Validar campos obrigatórios
+          // Validar campos obrigatórios e garantir que todos os campos estão presentes
           if (lead.nome && lead.email && lead.telefone) {
-            leads.push(lead);
+            leads.push({
+              nome: lead.nome,
+              email: lead.email,
+              telefone: lead.telefone,
+              cidade: lead.cidade || null,
+              tipo_plano: lead.tipo_plano || null
+            });
           }
         }
 

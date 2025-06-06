@@ -1,104 +1,105 @@
 import { useState } from "react";
-import { ArrowLeft, Upload, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, Upload, Download, FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link, useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 import { useLeads } from "@/hooks/useLeads";
 import { useCorretores } from "@/hooks/useCorretores";
-import { processCSVFile, processExcelFile, ImportedLead } from "@/utils/csvProcessor";
+import { useToast } from "@/hooks/use-toast";
+import { processCSVFile, ImportedLead } from "@/utils/csvProcessor";
 
 const NovoLead = () => {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const { createLead, importLeads } = useLeads();
-  const { corretores, currentCorretor } = useCorretores();
-  const [loading, setLoading] = useState(false);
-  const [importLoading, setImportLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
-  const [formData, setFormData] = useState({
-    nome: "",
-    email: "",
-    telefone: "",
-    cidade: "",
-    tipo_plano: "",
-    responsavel_id: null as number | null,
-    temperatura: "",
-    origem: "",
-    observacoes: "",
-  });
+  const { corretores } = useCorretores();
+  const { toast } = useToast();
 
-  const handleInputChange = (field: string, value: string | number | null) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  // state variables for individual lead
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [tipoPlano, setTipoPlano] = useState("");
+  const [responsavelId, setResponsavelId] = useState<string>("");
+  const [origem, setOrigem] = useState("");
+  const [temperatura, setTemperatura] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  const [activeTab, setActiveTab] = useState<"individual" | "lista">("individual");
 
-  const handleSubmit = async () => {
-    if (!formData.nome || !formData.email || !formData.telefone) {
+  // import state variables
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    success: boolean;
+    message: string;
+    count?: number;
+  } | null>(null);
+
+  // handleSubmit function
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!nome || !email || !telefone) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha nome, email e telefone.",
+        title: "Erro",
+        description: "Por favor, preencha todos os campos obrigatórios.",
         variant: "destructive",
       });
       return;
     }
 
-    setLoading(true);
-    
     const leadData = {
-      ...formData,
-      responsavel_id: formData.responsavel_id || currentCorretor?.id || null,
-      status: 'novo' as const
+      nome,
+      email,
+      telefone,
+      cidade: cidade || null,
+      tipo_plano: tipoPlano || null,
+      responsavel_id: responsavelId ? parseInt(responsavelId) : null,
+      origem: origem || null,
+      temperatura: temperatura || null,
+      observacoes: observacoes || null,
+      status: "novo" as const
     };
 
-    console.log('Enviando dados do lead:', leadData);
-
-    const { error } = await createLead(leadData);
-
-    if (error) {
-      console.error('Erro ao criar lead:', error);
+    const result = await createLead(leadData);
+    
+    if (result?.error) {
       toast({
-        title: "Erro ao adicionar lead",
-        description: `Ocorreu um erro ao cadastrar o lead: ${error}`,
+        title: "Erro",
+        description: result.error,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Lead adicionado com sucesso!",
-        description: "O novo lead foi cadastrado no sistema.",
+        title: "Sucesso",
+        description: "Lead criado com sucesso!",
       });
       navigate("/meus-leads");
     }
-    
-    setLoading(false);
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  // import functions
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
-      // Validar tipo de arquivo
-      const allowedTypes = [
-        'text/csv',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      ];
-      
-      if (!allowedTypes.includes(file.type) && !file.name.endsWith('.csv')) {
+      const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+
+      if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.csv')) {
         toast({
-          title: "Tipo de arquivo inválido",
+          title: "Arquivo inválido",
           description: "Por favor, selecione um arquivo CSV, XLS ou XLSX.",
           variant: "destructive",
         });
         return;
       }
 
-      // Validar tamanho do arquivo (10MB)
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > maxSize) {
         toast({
           title: "Arquivo muito grande",
           description: "O arquivo deve ter no máximo 10MB.",
@@ -107,74 +108,89 @@ const NovoLead = () => {
         return;
       }
 
-      setSelectedFile(file);
+      setImportFile(file);
+      setImportResult(null);
     }
   };
 
-  const handleImportLeads = async () => {
-    if (!selectedFile) {
+  const handleImport = async () => {
+    if (!importFile) {
       toast({
-        title: "Nenhum arquivo selecionado",
+        title: "Erro",
         description: "Por favor, selecione um arquivo para importar.",
         variant: "destructive",
       });
       return;
     }
 
-    setImportLoading(true);
+    setImporting(true);
+    setImportResult(null);
 
     try {
-      let importedLeads: ImportedLead[] = [];
-
-      if (selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv')) {
-        importedLeads = await processCSVFile(selectedFile);
+      let processedLeads: ImportedLead[];
+      
+      if (importFile.name.toLowerCase().endsWith('.csv')) {
+        processedLeads = await processCSVFile(importFile);
       } else {
-        importedLeads = await processExcelFile(selectedFile);
+        throw new Error('Apenas arquivos CSV são suportados no momento.');
       }
 
-      // Converter para o formato esperado pela API
-      const leadsToImport = importedLeads.map(lead => ({
-        ...lead,
-        responsavel_id: currentCorretor?.id || null,
-        status: 'novo' as const,
-        origem: 'importacao',
-        temperatura: null,
-        observacoes: null
+      // Converter ImportedLead para o formato esperado pelo banco
+      const leadsForDatabase = processedLeads.map(lead => ({
+        nome: lead.nome,
+        email: lead.email,
+        telefone: lead.telefone,
+        cidade: lead.cidade,
+        tipo_plano: lead.tipo_plano,
+        responsavel_id: responsavelId ? parseInt(responsavelId) : null,
+        status: "novo" as const,
+        origem: origem || "Importação",
+        temperatura: temperatura || null,
+        observacoes: observacoes || null
       }));
 
-      console.log('Leads para importar:', leadsToImport);
-
-      const { error, count } = await importLeads(leadsToImport);
-
-      if (error) {
-        console.error('Erro na importação:', error);
+      const result = await importLeads(leadsForDatabase);
+      
+      if (result?.error) {
+        setImportResult({
+          success: false,
+          message: result.error
+        });
         toast({
           title: "Erro na importação",
-          description: `Erro ao importar leads: ${error}`,
+          description: result.error,
           variant: "destructive",
         });
       } else {
-        toast({
-          title: "Importação concluída!",
-          description: `${count} leads foram importados com sucesso.`,
+        setImportResult({
+          success: true,
+          message: `${result?.count || 0} leads importados com sucesso!`,
+          count: result?.count
         });
-        navigate("/meus-leads");
+        toast({
+          title: "Importação concluída",
+          description: `${result?.count || 0} leads foram importados com sucesso!`,
+        });
+        setImportFile(null);
       }
     } catch (error) {
-      console.error('Erro ao processar arquivo:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      setImportResult({
+        success: false,
+        message: errorMessage
+      });
       toast({
         title: "Erro na importação",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao processar o arquivo.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      setImportLoading(false);
+      setImporting(false);
     }
   };
 
   const downloadTemplate = () => {
-    // Criar um CSV de exemplo
-    const csvContent = "Nome,Email,Telefone,Cidade,Tipo de Plano\nJoão Silva,joao@email.com,(11) 99999-9999,São Paulo,Individual\nMaria Santos,maria@email.com,(11) 88888-8888,Rio de Janeiro,Familiar";
+    const csvContent = "nome,email,telefone,cidade,tipo_plano\nJoão Silva,joao@email.com,11999999999,São Paulo,Premium\nMaria Santos,maria@email.com,11888888888,Rio de Janeiro,Basic";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -188,35 +204,61 @@ const NovoLead = () => {
 
   return (
     <div className="space-y-6">
+      {/* header */}
       <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/meus-leads">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/meus-leads")}
+          className="p-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Novo Lead</h1>
-          <p className="text-gray-600 mt-1">Adicione um novo lead manualmente ou importe uma lista.</p>
+          <p className="text-gray-600 mt-1">Adicione um novo lead ao sistema.</p>
         </div>
       </div>
 
-      <Tabs defaultValue="manual" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="manual">Adicionar Manualmente</TabsTrigger>
-          <TabsTrigger value="importar">Importar Lista</TabsTrigger>
-        </TabsList>
+      {/* tabs and forms */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+        <button
+          onClick={() => setActiveTab("individual")}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === "individual"
+              ? "bg-white text-blue-600 shadow-sm"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Lead Individual
+        </button>
+        <button
+          onClick={() => setActiveTab("lista")}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === "lista"
+              ? "bg-white text-blue-600 shadow-sm"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Importar Lista
+        </button>
+      </div>
 
-        <TabsContent value="manual">
-          <Card>
-            <CardContent className="p-6">
+      {activeTab === "individual" && (
+        <Card className="bg-white">
+          <CardHeader>
+            <CardTitle>Informações do Lead</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="nome">Nome *</Label>
                   <Input
                     id="nome"
-                    value={formData.nome}
-                    onChange={(e) => handleInputChange("nome", e.target.value)}
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
                     placeholder="Nome completo"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -224,45 +266,47 @@ const NovoLead = () => {
                   <Input
                     id="email"
                     type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="email@exemplo.com"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="telefone">Telefone *</Label>
                   <Input
                     id="telefone"
-                    value={formData.telefone}
-                    onChange={(e) => handleInputChange("telefone", e.target.value)}
+                    value={telefone}
+                    onChange={(e) => setTelefone(e.target.value)}
                     placeholder="(11) 99999-9999"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cidade">Cidade</Label>
                   <Input
                     id="cidade"
-                    value={formData.cidade}
-                    onChange={(e) => handleInputChange("cidade", e.target.value)}
+                    value={cidade}
+                    onChange={(e) => setCidade(e.target.value)}
                     placeholder="São Paulo"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tipo_plano">Tipo de Plano</Label>
-                  <Select onValueChange={(value) => handleInputChange("tipo_plano", value)}>
+                  <Label htmlFor="tipo-plano">Tipo de Plano</Label>
+                  <Select value={tipoPlano} onValueChange={setTipoPlano}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo de plano" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="individual">Individual</SelectItem>
-                      <SelectItem value="familiar">Familiar</SelectItem>
-                      <SelectItem value="empresarial">Empresarial</SelectItem>
+                      <SelectItem value="basic">Básico</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="enterprise">Enterprise</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="responsavel">Responsável</Label>
-                  <Select onValueChange={(value) => handleInputChange("responsavel_id", parseInt(value))}>
+                  <Select value={responsavelId} onValueChange={setResponsavelId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o responsável" />
                     </SelectTrigger>
@@ -276,163 +320,195 @@ const NovoLead = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="temperatura">Temperatura</Label>
-                  <Select onValueChange={(value) => handleInputChange("temperatura", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a temperatura" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="quente">🔥 Quente</SelectItem>
-                      <SelectItem value="morno">🟡 Morno</SelectItem>
-                      <SelectItem value="frio">🧊 Frio</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="origem">Origem</Label>
-                  <Select onValueChange={(value) => handleInputChange("origem", value)}>
+                  <Select value={origem} onValueChange={setOrigem}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a origem" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="site">Site</SelectItem>
-                      <SelectItem value="facebook">Facebook</SelectItem>
-                      <SelectItem value="google">Google Ads</SelectItem>
+                      <SelectItem value="website">Website</SelectItem>
+                      <SelectItem value="redes-sociais">Redes Sociais</SelectItem>
                       <SelectItem value="indicacao">Indicação</SelectItem>
-                      <SelectItem value="outros">Outros</SelectItem>
+                      <SelectItem value="evento">Evento</SelectItem>
+                      <SelectItem value="outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="temperatura">Temperatura</Label>
+                  <Select value={temperatura} onValueChange={setTemperatura}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a temperatura" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="frio">Frio</SelectItem>
+                      <SelectItem value="morno">Morno</SelectItem>
+                      <SelectItem value="quente">Quente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="observacoes">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={observacoes}
+                  onChange={(e) => setObservacoes(e.target.value)}
+                  placeholder="Observações adicionais sobre o lead..."
+                  rows={4}
+                />
+              </div>
+              <div className="flex justify-end space-x-4">
+                <Button type="button" variant="outline" onClick={() => navigate("/meus-leads")}>
+                  Cancelar
+                </Button>
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                  Criar Lead
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeTab === "lista" && (
+        <div className="space-y-6">
+          <Card className="bg-white">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Upload className="w-5 h-5" />
+                <span>Importar Lista de Leads</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="responsavel-import">Responsável (todos os leads)</Label>
+                  <Select value={responsavelId} onValueChange={setResponsavelId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o responsável" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {corretores.map((corretor) => (
+                        <SelectItem key={corretor.id} value={corretor.id.toString()}>
+                          {corretor.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="origem-import">Origem (todos os leads)</Label>
+                  <Select value={origem} onValueChange={setOrigem}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a origem" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="website">Website</SelectItem>
+                      <SelectItem value="redes-sociais">Redes Sociais</SelectItem>
+                      <SelectItem value="indicacao">Indicação</SelectItem>
+                      <SelectItem value="evento">Evento</SelectItem>
+                      <SelectItem value="importacao">Importação</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <div className="mt-6 space-y-2">
-                <Label htmlFor="observacoes">Observações</Label>
-                <Textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => handleInputChange("observacoes", e.target.value)}
-                  placeholder="Informações adicionais sobre o lead..."
-                  rows={4}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4 mt-8">
-                <Button variant="outline" asChild>
-                  <Link to="/meus-leads">Cancelar</Link>
-                </Button>
-                <Button 
-                  onClick={handleSubmit} 
-                  className="bg-blue-600 hover:bg-blue-700"
-                  disabled={loading}
-                >
-                  {loading ? "Adicionando..." : "Adicionar Lead"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="importar">
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Importar Lista de Leads</h3>
-                  
-                  {/* Área de upload */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                        <FileSpreadsheet className="w-8 h-8 text-blue-600" />
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-lg font-medium text-gray-900 mb-2">
-                          Arraste o arquivo ou clique para selecionar
-                        </h4>
-                        <p className="text-gray-500 mb-4">
-                          Suporte para arquivos CSV, XLSX e XLS
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <input
-                          type="file"
-                          id="file-upload"
-                          className="hidden"
-                          accept=".csv,.xlsx,.xls"
-                          onChange={handleFileSelect}
-                        />
-                        <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                          <label htmlFor="file-upload" className="cursor-pointer">
-                            <Upload className="w-4 h-4 mr-2" />
-                            Selecionar Arquivo
-                          </label>
-                        </Button>
-                      </div>
-                      
-                      {selectedFile && (
-                        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <p className="text-green-700 font-medium">
-                            Arquivo selecionado: {selectedFile.name}
-                          </p>
-                          <p className="text-green-600 text-sm">
-                            Tamanho: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        </div>
-                      )}
-                    </div>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8">
+                <div className="text-center">
+                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="mt-4">
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <span className="mt-2 block text-sm font-medium text-gray-900">
+                        Clique para selecionar um arquivo ou arraste e solte
+                      </span>
+                      <span className="mt-1 block text-sm text-gray-500">
+                        CSV, XLS, XLSX até 10MB
+                      </span>
+                    </label>
+                    <input
+                      id="file-upload"
+                      name="file-upload"
+                      type="file"
+                      className="sr-only"
+                      accept=".csv,.xls,.xlsx"
+                      onChange={handleFileChange}
+                    />
                   </div>
                 </div>
+              </div>
 
-                {/* Instruções */}
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Instruções</h4>
-                  <ul className="space-y-2 text-gray-600">
-                    <li className="flex items-start">
-                      <span className="w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      O arquivo deve ter as colunas: Nome, Email, Telefone, Cidade e Tipo de Plano.
-                    </li>
-                    <li className="flex items-start">
-                      <span className="w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      O tamanho máximo do arquivo é de 10MB.
-                    </li>
-                    <li className="flex items-start">
-                      <span className="w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      Cada linha no arquivo será importada como um novo lead.
-                    </li>
-                    <li className="flex items-start">
-                      <span className="w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      Você pode baixar um{" "}
-                      <button
-                        onClick={downloadTemplate}
-                        className="text-blue-600 hover:text-blue-700 underline"
-                      >
-                        modelo de arquivo aqui
-                      </button>
-                      .
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Botões de ação */}
-                <div className="flex justify-end space-x-4">
-                  <Button variant="outline" asChild>
-                    <Link to="/meus-leads">Cancelar</Link>
-                  </Button>
-                  <Button 
-                    onClick={handleImportLeads} 
-                    className="bg-blue-600 hover:bg-blue-700"
-                    disabled={!selectedFile || importLoading}
+              {importFile && (
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="w-8 h-8 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{importFile.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {(importFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setImportFile(null)}
+                    variant="ghost"
+                    size="sm"
                   >
-                    {importLoading ? "Importando..." : "Importar Leads"}
+                    Remover
                   </Button>
                 </div>
+              )}
+
+              {importResult && (
+                <div className={`p-4 rounded-lg ${importResult.success ? 'bg-green-50' : 'bg-red-50'}`}>
+                  <div className="flex items-center space-x-2">
+                    {importResult.success ? (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-red-600" />
+                    )}
+                    <span className={`text-sm font-medium ${importResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                      {importResult.message}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={downloadTemplate}
+                  className="flex items-center space-x-2"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Baixar Modelo CSV</span>
+                </Button>
+                <Button
+                  onClick={handleImport}
+                  disabled={!importFile || importing}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {importing ? "Importando..." : "Importar Leads"}
+                </Button>
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+
+          <Card className="bg-blue-50">
+            <CardContent className="p-6">
+              <h3 className="font-medium text-blue-900 mb-2">Instruções para importação:</h3>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• O arquivo deve conter as colunas: nome, email, telefone (obrigatórias)</li>
+                <li>• Colunas opcionais: cidade, tipo_plano</li>
+                <li>• Use o modelo CSV como referência</li>
+                <li>• Máximo de 10MB por arquivo</li>
+                <li>• Todos os leads importados terão o mesmo responsável e origem selecionados acima</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

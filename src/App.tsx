@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import MeusLeads from "./pages/MeusLeads";
 import NovoLead from "./pages/NovoLead";
+import EditarLead from "./pages/EditarLead";
 import Corretores from "./pages/Corretores";
 import Relatorios from "./pages/Relatorios";
 import Notificacoes from "./pages/Notificacoes";
@@ -68,6 +69,14 @@ const App = () => (
                             element={
                               <MainLayout>
                                 <NovoLead />
+                              </MainLayout>
+                            }
+                          />
+                          <Route
+                            path="/editar-lead/:id"
+                            element={
+                              <MainLayout>
+                                <EditarLead />
                               </MainLayout>
                             }
                           />

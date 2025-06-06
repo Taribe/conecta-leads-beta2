@@ -54,6 +54,33 @@ export const useLeads = () => {
     }
   };
 
+  const fetchLeadById = async (id: number) => {
+    if (!user) return { error: 'Usuário não autenticado' };
+
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .select(`
+          *,
+          corretores:responsavel_id (
+            nome
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Erro ao buscar lead:', error);
+        return { error: error.message };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Erro ao buscar lead:', error);
+      return { error: 'Erro interno do servidor' };
+    }
+  };
+
   const createLead = async (leadData: Omit<Lead, 'id' | 'created_at' | 'responsavel'>) => {
     if (!user) return { error: 'Usuário não autenticado' };
 
@@ -76,6 +103,33 @@ export const useLeads = () => {
       return { data, error: null };
     } catch (error) {
       console.error('Erro ao criar lead:', error);
+      return { error: 'Erro interno do servidor' };
+    }
+  };
+
+  const updateLead = async (id: number, leadData: Partial<Omit<Lead, 'id' | 'created_at' | 'responsavel'>>) => {
+    if (!user) return { error: 'Usuário não autenticado' };
+
+    console.log('Atualizando lead:', id, leadData);
+
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .update(leadData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao atualizar lead:', error);
+        return { error: error.message };
+      }
+
+      console.log('Lead atualizado com sucesso:', data);
+      await fetchLeads(); // Refresh the list
+      return { data, error: null };
+    } catch (error) {
+      console.error('Erro ao atualizar lead:', error);
       return { error: 'Erro interno do servidor' };
     }
   };
@@ -113,7 +167,9 @@ export const useLeads = () => {
     leads,
     loading,
     fetchLeads,
+    fetchLeadById,
     createLead,
+    updateLead,
     importLeads
   };
 };
